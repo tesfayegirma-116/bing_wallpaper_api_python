@@ -5,6 +5,7 @@ import urllib.request
 import os
 from datetime import datetime
 
+
 def get_bing_wallpaper():
     try:
         # Bing Wallpaper API URL
@@ -26,7 +27,7 @@ def get_bing_wallpaper():
                 last_wallpaper_url = f.read()
             if wallpaper_url == last_wallpaper_url:
                 print("Daily wallpaper has not changed.")
-                return
+                return os.EX_OK
 
         # Save the new wallpaper URL
         with open(last_wallpaper_url_file, "w") as f:
@@ -39,8 +40,17 @@ def get_bing_wallpaper():
         # Download the wallpaper
         current_date = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         file_name = f"{current_date}.jpg"
-        file_path = os.path.join(folder_path, file_name)
+        relative_file_path = os.path.join(folder_path, file_name)
+        file_path = os.path.abspath(relative_file_path)
         urllib.request.urlretrieve(wallpaper_url, file_path)
+
+        cmd = f"gsettings set org.gnome.desktop.background picture-uri file:///{file_path}"
+        result = os.system(cmd)
+
+        if result != 0:
+            print("Error: Wallpaper not changed.")
+        else:
+            print("Wallpaper changed successfully.")
 
         print(f"Downloaded daily wallpaper: {file_name}")
     except requests.exceptions.HTTPError as e:
@@ -49,6 +59,7 @@ def get_bing_wallpaper():
         print(f"Request error occurred: {e}")
     except Exception as e:
         print(f"An error occurred: {e}")
+
 
 if __name__ == "__main__":
     get_bing_wallpaper()
